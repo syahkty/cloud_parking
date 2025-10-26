@@ -1,113 +1,289 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Palang Cloud Control (Event-Driven)</title>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<style>
-  :root{--bg:#0b1020;--card:#121a33;--mut:#273458;--txt:#e8f0ff;--ok:#2b8a3e}
-  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,Arial,sans-serif}
-  .wrap{max-width:760px;margin:40px auto;padding:20px}
-  .card{background:var(--card);border:1px solid var(--mut);border-radius:16px;padding:18px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  input{background:#0f1730;border:1px solid var(--mut);color:var(--txt);border-radius:10px;padding:10px;min-width:260px}
-  .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
-  .btn-green{background:var(--ok);color:#fff}
-  .tag{display:inline-block;padding:6px 10px;border:1px solid var(--mut);border-radius:999px;background:#0f1730}
-  .led{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
-  .r{background:#ff4d4f}.y{background:#ffd23f}.g{background:#41d37e}.n{background:#4a5568}
-  pre{background:#0f1730;border:1px solid var(--mut);padding:10px;border-radius:10px;white-space:pre-wrap}
-  small{opacity:.7}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h2>Palang Cloud Control</h2>
-  <div class="card">
-    <div class="row">
-      <input id="api" placeholder="API base" value="https://d2shze8jl6.execute-api.ap-southeast-1.amazonaws.com">
-      <input id="dev" placeholder="Device ID" value="PALANG-01">
-      <input id="key" placeholder="API key (opsional)">
-      <button id="btnOpen" class="btn btn-green">OPEN (Buka Palang)</button>
-      <button id="btnRefresh" class="btn">Refresh</button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Palang Cloud Control (WebSocket Push)</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #121a33;
+        --mut: #273458;
+        --txt: #e8f0ff;
+        --ok: #2b8a3e;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--txt);
+        font-family: system-ui, Segoe UI, Arial, sans-serif;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--mut);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      input {
+        background: #0f1730;
+        border: 1px solid var(--mut);
+        color: var(--txt);
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 240px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn-green {
+        background: var(--ok);
+        color: #fff;
+      }
+      .pill {
+        display: inline-block;
+        padding: 6px 10px;
+        border: 1px solid var(--mut);
+        border-radius: 999px;
+        background: #0f1730;
+      }
+      .led {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .r {
+        background: #ff4d4f;
+      }
+      .y {
+        background: #ffd23f;
+      }
+      .g {
+        background: #41d37e;
+      }
+      .n {
+        background: #4a5568;
+      }
+      pre {
+        background: #0f1730;
+        border: 1px solid var(--mut);
+        padding: 10px;
+        border-radius: 10px;
+        white-space: pre-wrap;
+      }
+      small {
+        opacity: 0.75;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h2>Palang Cloud Control</h2>
+      <div class="card">
+        <div class="row">
+          <input
+            id="http"
+            placeholder="HTTP API base"
+            value="https://d2shze8jl6.execute-api.ap-southeast-1.amazonaws.com"
+          />
+          <input
+            id="ws"
+            placeholder="WS base (wss)"
+            value="wss://<WS_API_ID>.execute-api.ap-southeast-1.amazonaws.com/prod"
+          />
+          <input id="dev" placeholder="Device ID" value="PALANG-01" />
+          <input id="key" placeholder="API key (wajib jika diaktifkan)" />
+        </div>
+        <div class="row" style="margin-top: 10px">
+          <button id="btnConn" class="btn">Connect WS</button>
+          <button id="btnOpen" class="btn btn-green" disabled>
+            OPEN (Buka Palang)
+          </button>
+          <button id="btnReset" class="btn">Force Reset (open:false)</button>
+        </div>
+
+        <div class="row" style="margin-top: 12px">
+          <div class="pill">
+            <span id="wsdot" class="led n"></span
+            ><b id="wsText">WS: Disconnected</b>
+          </div>
+          <div class="pill"><b>Arm:</b> <span id="armTxt">false</span></div>
+          <div class="pill"><b>ArmUntil:</b> <span id="armUntil">—</span></div>
+        </div>
+
+        <div style="margin-top: 12px">
+          <b>Log</b>
+          <pre id="log"></pre>
+          <small
+            >Browser akan enable tombol OPEN hanya saat menerima push
+            <i>arm</i> dari server (ketika ESP32 mengirim telemetry
+            terdeteksi/merah).</small
+          >
+        </div>
+      </div>
     </div>
 
-    <div class="row" style="margin-top:12px">
-      <div class="tag"><span id="led" class="led n"></span><b id="ledText">Unknown</b></div>
-      <div class="tag"><b>Gate:</b> <span id="gate">Unknown</span></div>
-      <div class="tag"><b>Last Cmd:</b> <span id="updated">—</span></div>
-    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const http = () => $("http").value.replace(/\/$/, "");
+      const wsBase = () => $("ws").value.replace(/\/$/, "");
+      const dev = () => $("dev").value.trim();
+      const key = () => $("key").value.trim();
 
-    <div style="margin-top:12px">
-      <b>Command (/command)</b>
-      <pre id="cmdBox">{}</pre>
-      <small>Catatan: ESP32 <i>tidak</i> mengirim telemetry reguler. Ia hanya mengirim saat objek terdeteksi (MERAH). Menekan OPEN di sini akan tersimpan di cloud; ESP32 akan mengambilnya hanya ketika ada deteksi (atau dalam jendela beberapa detik setelahnya).</small>
-    </div>
-  </div>
-</div>
+      let sock = null;
+      let armTimer = null;
+      let armed = false;
 
-<script>
-const $  = id => document.getElementById(id);
-const api= () => $('api').value.replace(/\/$/,'');
-const dev= () => $('dev').value.trim();
-const key= () => $('key').value.trim();
+      function log(s) {
+        $("log").textContent =
+          new Date().toLocaleTimeString() +
+          " - " +
+          s +
+          "\n" +
+          $("log").textContent;
+      }
+      function setWS(state) {
+        if (state === "up") {
+          $("wsdot").className = "led g";
+          $("wsText").textContent = "WS: Connected";
+        } else if (state === "down") {
+          $("wsdot").className = "led r";
+          $("wsText").textContent = "WS: Disconnected";
+        } else {
+          $("wsdot").className = "led n";
+          $("wsText").textContent = "WS: ...";
+        }
+      }
+      function setArm(on, untilMs) {
+        armed = !!on;
+        $("armTxt").textContent = String(armed);
+        $("btnOpen").disabled = !armed;
+        if (untilMs) {
+          $("armUntil").textContent = new Date(untilMs).toLocaleTimeString();
+        } else {
+          $("armUntil").textContent = "—";
+        }
+        if (armTimer) {
+          clearTimeout(armTimer);
+          armTimer = null;
+        }
+        if (armed && untilMs) {
+          const left = Math.max(0, untilMs - Date.now());
+          armTimer = setTimeout(() => setArm(false, null), left + 100);
+        }
+      }
 
-function headers(json=false){
-  const h = json ? {'Content-Type':'application/json'} : {};
-  if (key()) h['x-api-key'] = key();
-  return h;
-}
-async function postJSON(url, obj){
-  const r = await fetch(url, {method:'POST', headers:headers(true), body:JSON.stringify(obj)});
-  const j = await r.json().catch(()=>({}));
-  if (!r.ok) throw new Error(JSON.stringify(j));
-  return j;
-}
-async function getJSON(url){
-  const r = await fetch(url, {headers:headers(false)});
-  const j = await r.json().catch(()=>({}));
-  if (!r.ok) throw new Error(JSON.stringify(j));
-  return j;
-}
+      function connectWS() {
+        if (sock && sock.readyState === WebSocket.OPEN) return;
+        const url = `${wsBase()}?deviceId=${encodeURIComponent(dev())}${
+          key() ? `&key=${encodeURIComponent(key())}` : ""
+        }`;
+        log("Connecting WS: " + url);
+        setWS("...");
+        sock = new WebSocket(url);
+        sock.onopen = () => {
+          setWS("up");
+          log("WS open");
+        };
+        sock.onclose = () => {
+          setWS("down");
+          log("WS closed");
+          setArm(false, null);
+        };
+        sock.onerror = (e) => {
+          setWS("down");
+          log("WS error");
+        };
+        sock.onmessage = (evt) => {
+          try {
+            const msg = JSON.parse(evt.data || "{}");
+            if (msg.type === "arm") {
+              setArm(!!msg.arm, msg.armUntil || null);
+              log("ARM push received: " + JSON.stringify(msg));
+            } else if (msg.type === "cmd") {
+              log("CMD push: " + JSON.stringify(msg));
+            } else {
+              log("WS msg: " + evt.data);
+            }
+          } catch (e) {
+            log("WS parse error: " + String(e));
+          }
+        };
+      }
 
-function paintUI(cmd){
-  $('cmdBox').textContent = JSON.stringify(cmd, null, 2);
-  const isOpen = !!cmd.open;
-  $('led').className = 'led ' + (isOpen?'g':'r');
-  $('ledText').textContent = isOpen ? 'OPEN requested' : 'CLOSED requested';
-  $('gate').textContent = isOpen ? 'Menunggu ESP buka' : 'Menunggu ESP tutup';
-  $('updated').textContent = cmd.updatedAt ? new Date(cmd.updatedAt).toLocaleString() : '—';
-}
+      async function postJSON(path, payload) {
+        const headers = { "Content-Type": "application/json" };
+        if (key()) headers["x-api-key"] = key();
+        const r = await fetch(http() + path, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(JSON.stringify(j));
+        return j;
+      }
 
-async function refresh(){
-  try{
-    const cmd = await getJSON(`${api()}/command?deviceId=${encodeURIComponent(dev())}&_=${Date.now()}`);
-    paintUI(cmd);
-  }catch(e){
-    $('cmdBox').textContent = 'ERR ' + e.message;
-    $('led').className='led n';
-    $('ledText').textContent='Unknown';
-    $('gate').textContent='Unknown';
-    $('updated').textContent='—';
-  }
-}
+      $("btnConn").onclick = connectWS;
 
-$('btnOpen').onclick = async ()=>{
-  $('btnOpen').disabled = true;
-  try{
-    await postJSON(`${api()}/set-command`, { deviceId: dev(), open: true });
-    Swal.fire({icon:'success', title:'OPEN dikirim', text:'Perintah OPEN tersimpan di cloud. ESP akan mengambil saat deteksi.'});
-    await refresh();
-  }catch(e){
-    Swal.fire({icon:'error', title:'Gagal kirim OPEN', text:e.message});
-  }finally{
-    $('btnOpen').disabled = false;
-  }
-};
-$('btnRefresh').onclick = refresh;
+      $("btnOpen").onclick = async () => {
+        $("btnOpen").disabled = true;
+        try {
+          await postJSON("/set-command", { deviceId: dev(), open: true });
+          Swal.fire({
+            icon: "success",
+            title: "OPEN dikirim",
+            text: "Perintah OPEN tersimpan. ESP akan eksekusi.",
+          });
+        } catch (e) {
+          Swal.fire({
+            icon: "error",
+            title: "Gagal kirim OPEN",
+            text: e.message,
+          });
+        } finally {
+          // tetap ikut status arm (jangan force enable)
+          $("btnOpen").disabled = !armed;
+        }
+      };
 
-refresh();
-</script>
-</body>
+      $("btnReset").onclick = async () => {
+        try {
+          await postJSON("/set-command", { deviceId: dev(), open: false });
+          Swal.fire({
+            icon: "success",
+            title: "RESET dikirim",
+            text: "Perintah open:false tersimpan.",
+          });
+        } catch (e) {
+          Swal.fire({
+            icon: "error",
+            title: "Gagal kirim RESET",
+            text: e.message,
+          });
+        }
+      };
+
+      // optional: langsung connect saat halaman dibuka
+      connectWS();
+    </script>
+  </body>
 </html>
