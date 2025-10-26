@@ -3,250 +3,111 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Palang Cloud Control</title>
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<title>Palang Cloud Control (Event-Driven)</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-  :root{
-    --bg:#0b1020; --card:#121a33; --mut:#273458; --txt:#e8f0ff; --ok:#2b8a3e;
-    --red:#ff3b3b; --yel:#ffd23f; --grn:#41d37e; --ink:#0f1730;
-  }
-  *{box-sizing:border-box}
+  :root{--bg:#0b1020;--card:#121a33;--mut:#273458;--txt:#e8f0ff;--ok:#2b8a3e}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,Arial,sans-serif}
-  .wrap{max-width:900px;margin:32px auto;padding:16px}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  h1{font-size:20px;margin:0}
-  .card{background:var(--card);border:1px solid var(--mut);border-radius:16px;padding:16px}
+  .wrap{max-width:760px;margin:40px auto;padding:20px}
+  .card{background:var(--card);border:1px solid var(--mut);border-radius:16px;padding:18px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  input{background:var(--ink);border:1px solid var(--mut);color:var(--txt);
-        border-radius:10px;padding:10px;min-width:260px;outline:none}
-  .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.2s}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
+  input{background:#0f1730;border:1px solid var(--mut);color:var(--txt);border-radius:10px;padding:10px;min-width:260px}
+  .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
   .btn-green{background:var(--ok);color:#fff}
-  .btn-ghost{background:transparent;color:var(--txt);border:1px solid var(--mut)}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
-  .tile{background:var(--ink);border:1px solid var(--mut);border-radius:14px;padding:14px}
-  .tile h3{margin:0 0 6px;font-size:14px;opacity:.85}
-  .value{font-size:22px;font-weight:800}
-  .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--mut);background:#0f1730}
-  .leds{display:flex;gap:12px;align-items:center}
-  .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--mut);opacity:.35}
-  .dot.on{opacity:1}
-  .dot.red{background:var(--red)}
-  .dot.yel{background:var(--yel)}
-  .dot.grn{background:var(--grn)}
-  .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-  pre{background:var(--ink);border:1px solid var(--mut);padding:12px;border-radius:12px;white-space:pre-wrap;margin:0;min-height:120px}
-  .muted{opacity:.7}
-  .toolbar{display:flex;gap:10px;align-items:center;margin:12px 0}
-  .toggle{display:flex;align-items:center;gap:8px}
-  .toggle input{width:auto;min-width:unset}
-  .pill{display:inline-block;padding:8px 12px;border-radius:999px;background:var(--ink);border:1px solid var(--mut)}
-  footer{margin-top:18px;font-size:12px;opacity:.7;text-align:center}
-  @media (max-width:860px){ .grid{grid-template-columns:repeat(2,1fr)} .cols{grid-template-columns:1fr} }
+  .tag{display:inline-block;padding:6px 10px;border:1px solid var(--mut);border-radius:999px;background:#0f1730}
+  .led{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .r{background:#ff4d4f}.y{background:#ffd23f}.g{background:#41d37e}.n{background:#4a5568}
+  pre{background:#0f1730;border:1px solid var(--mut);padding:10px;border-radius:10px;white-space:pre-wrap}
+  small{opacity:.7}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Palang Cloud Control</h1>
-    <div class="pill" id="lastUpdate">Last update: —</div>
-  </header>
-
+  <h2>Palang Cloud Control</h2>
   <div class="card">
     <div class="row">
       <input id="api" placeholder="API base" value="https://d2shze8jl6.execute-api.ap-southeast-1.amazonaws.com">
       <input id="dev" placeholder="Device ID" value="PALANG-01">
       <input id="key" placeholder="API key (opsional)">
-      <button id="btnSave" class="btn btn-ghost">Simpan</button>
       <button id="btnOpen" class="btn btn-green">OPEN (Buka Palang)</button>
-      <button id="btnRefresh" class="btn btn-ghost">Refresh</button>
+      <button id="btnRefresh" class="btn">Refresh</button>
     </div>
 
-    <div class="toolbar">
-      <label class="toggle"><input type="checkbox" id="auto" checked> Auto refresh 1s</label>
-      <span class="pill" id="baseUrl">—</span>
+    <div class="row" style="margin-top:12px">
+      <div class="tag"><span id="led" class="led n"></span><b id="ledText">Unknown</b></div>
+      <div class="tag"><b>Gate:</b> <span id="gate">Unknown</span></div>
+      <div class="tag"><b>Last Cmd:</b> <span id="updated">—</span></div>
     </div>
 
-    <div class="grid">
-      <div class="tile">
-        <h3>Status Palang</h3>
-        <div id="gate" class="value">—</div>
-        <div id="gateBadge" class="badge">—</div>
-      </div>
-      <div class="tile">
-        <h3>Deteksi</h3>
-        <div class="value" id="det">—</div>
-        <div class="muted">(<span id="jarak">—</span>)</div>
-      </div>
-      <div class="tile">
-        <h3>LED</h3>
-        <div class="leds">
-          <span id="ledR" class="dot red"></span>
-          <span id="ledY" class="dot yel"></span>
-          <span id="ledG" class="dot grn"></span>
-        </div>
-        <div class="muted" id="ledText">—</div>
-      </div>
-      <div class="tile">
-        <h3>Command Ready</h3>
-        <div class="value" id="cmdOpen">—</div>
-        <div class="muted">/command → open</div>
-      </div>
+    <div style="margin-top:12px">
+      <b>Command (/command)</b>
+      <pre id="cmdBox">{}</pre>
+      <small>Catatan: ESP32 <i>tidak</i> mengirim telemetry reguler. Ia hanya mengirim saat objek terdeteksi (MERAH). Menekan OPEN di sini akan tersimpan di cloud; ESP32 akan mengambilnya hanya ketika ada deteksi (atau dalam jendela beberapa detik setelahnya).</small>
     </div>
-
-    <div class="cols">
-      <div>
-        <h3>/command</h3>
-        <pre id="cmdBox">{}</pre>
-      </div>
-      <div>
-        <h3>/state</h3>
-        <pre id="stateBox">{}</pre>
-      </div>
-    </div>
-
-    <footer>UI ini hanya mengirim <b>OPEN</b>. Penutupan dilakukan otomatis oleh firmware di ESP32.</footer>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-const $ = id => document.getElementById(id);
-const getAPI = () => $('api').value.replace(/\/$/,'');
-const getDEV = () => $('dev').value.trim();
-const getKEY = () => $('key').value.trim();
+const $  = id => document.getElementById(id);
+const api= () => $('api').value.replace(/\/$/,'');
+const dev= () => $('dev').value.trim();
+const key= () => $('key').value.trim();
 
-function saveCfg(){
-  localStorage.setItem('palang_api', getAPI());
-  localStorage.setItem('palang_dev', getDEV());
-  localStorage.setItem('palang_key', getKEY());
-  $('baseUrl').textContent = getAPI();
-  Swal.fire({icon:'success', title:'Tersimpan', timer:1100, showConfirmButton:false});
-}
-function loadCfg(){
-  const a = localStorage.getItem('palang_api'); if(a) $('api').value = a;
-  const d = localStorage.getItem('palang_dev'); if(d) $('dev').value = d;
-  const k = localStorage.getItem('palang_key'); if(k) $('key').value = k;
-  $('baseUrl').textContent = getAPI();
-}
-$('btnSave').onclick = saveCfg;
-loadCfg();
-
-function headers(){
-  const h = {};
-  if (getKEY()) h['x-api-key'] = getKEY();
+function headers(json=false){
+  const h = json ? {'Content-Type':'application/json'} : {};
+  if (key()) h['x-api-key'] = key();
   return h;
 }
 async function postJSON(url, obj){
-  const r = await fetch(url, {method:'POST', headers: {'Content-Type':'application/json', ...headers()}, body: JSON.stringify(obj)});
+  const r = await fetch(url, {method:'POST', headers:headers(true), body:JSON.stringify(obj)});
   const j = await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(j.error || r.statusText);
+  if (!r.ok) throw new Error(JSON.stringify(j));
   return j;
 }
 async function getJSON(url){
-  const r = await fetch(url, {headers: headers()});
+  const r = await fetch(url, {headers:headers(false)});
   const j = await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(j.error || r.statusText);
+  if (!r.ok) throw new Error(JSON.stringify(j));
   return j;
 }
 
-// === UI helpers ===
-function setLED(r,y,g){
-  $('ledR').classList.toggle('on', !!r);
-  $('ledY').classList.toggle('on', !!y);
-  $('ledG').classList.toggle('on', !!g);
+function paintUI(cmd){
+  $('cmdBox').textContent = JSON.stringify(cmd, null, 2);
+  const isOpen = !!cmd.open;
+  $('led').className = 'led ' + (isOpen?'g':'r');
+  $('ledText').textContent = isOpen ? 'OPEN requested' : 'CLOSED requested';
+  $('gate').textContent = isOpen ? 'Menunggu ESP buka' : 'Menunggu ESP tutup';
+  $('updated').textContent = cmd.updatedAt ? new Date(cmd.updatedAt).toLocaleString() : '—';
 }
-function deriveLed(state){
-  if (state && typeof state.led === 'string'){
-    return state.led.toUpperCase();
+
+async function refresh(){
+  try{
+    const cmd = await getJSON(`${api()}/command?deviceId=${encodeURIComponent(dev())}&_=${Date.now()}`);
+    paintUI(cmd);
+  }catch(e){
+    $('cmdBox').textContent = 'ERR ' + e.message;
+    $('led').className='led n';
+    $('ledText').textContent='Unknown';
+    $('gate').textContent='Unknown';
+    $('updated').textContent='—';
   }
-  // fallback derivation
-  if (state && state.detected && !state.gateOpen) return 'RED';
-  if (state && state.gateOpen) return 'GREEN';
-  return 'YELLOW';
-}
-function fmtTime(ms){
-  if (!ms) return '—';
-  try {
-    const d = new Date(Number(ms));
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleString();
-  } catch { return '—'; }
 }
 
-function updateUI({cmd, state}){
-  // boxes
-  $('cmdBox').textContent   = JSON.stringify(cmd || {}, null, 2);
-  $('stateBox').textContent = JSON.stringify(state || {}, null, 2);
-
-  const openCmd = !!(cmd && cmd.open);
-  $('cmdOpen').textContent = openCmd ? 'TRUE' : 'FALSE';
-
-  // last update
-  $('lastUpdate').textContent = 'Last update: ' + fmtTime(state && state.updatedAt);
-
-  // gate
-  const gateOpen = !!(state && state.gateOpen);
-  $('gate').textContent = gateOpen ? 'Terbuka' : 'Tertutup';
-  $('gateBadge').textContent = gateOpen ? 'HIJAU' : 'Bukan Hijau';
-
-  // deteksi + jarak
-  const det = !!(state && state.detected);
-  $('det').textContent = det ? 'TERDETEKSI' : 'Tidak ada';
-  $('jarak').textContent = (state && typeof state.jarak === 'number' && state.jarak >= 0) ? (state.jarak.toFixed(1)+' cm') : '--';
-
-  // LED
-  const led = deriveLed(state);
-  $('ledText').textContent = led;
-  setLED(led==='RED', led==='YELLOW', led==='GREEN');
-
-  // enable/disable open: hanya bisa kalau ada deteksi dan palang masih tertutup
-  $('btnOpen').disabled = !(det && !gateOpen);
-}
-
-// === actions ===
 $('btnOpen').onclick = async ()=>{
   $('btnOpen').disabled = true;
   try{
-    await postJSON(`${getAPI()}/set-command`, { deviceId: getDEV(), open: true });
-    await Swal.fire({icon:'success', title:'Perintah OPEN dikirim', timer:1200, showConfirmButton:false});
-    await refreshAll();
+    await postJSON(`${api()}/set-command`, { deviceId: dev(), open: true });
+    Swal.fire({icon:'success', title:'OPEN dikirim', text:'Perintah OPEN tersimpan di cloud. ESP akan mengambil saat deteksi.'});
+    await refresh();
   }catch(e){
-    Swal.fire({icon:'error', title:'Gagal', text: e.message || 'Error'});
+    Swal.fire({icon:'error', title:'Gagal kirim OPEN', text:e.message});
   }finally{
     $('btnOpen').disabled = false;
   }
 };
+$('btnRefresh').onclick = refresh;
 
-$('btnRefresh').onclick = ()=>refreshAll(true);
-
-async function refreshAll(force=false){
-  try{
-    const [cmd, state] = await Promise.all([
-      getJSON(`${getAPI()}/command?deviceId=${encodeURIComponent(getDEV())}&_=${Date.now()}`),
-      getJSON(`${getAPI()}/state?deviceId=${encodeURIComponent(getDEV())}&_=${Date.now()}`)
-        .catch(()=> ({})) // /state opsional
-    ]);
-    updateUI({cmd, state});
-  }catch(e){
-    if (force){
-      Swal.fire({icon:'error', title:'Gagal Refresh', text:e.message || 'Error'});
-    }
-  }
-}
-
-// auto refresh
-let timer = setInterval(refreshAll, 1000);
-$('auto').addEventListener('change', (e)=>{
-  if (e.target.checked){
-    timer = setInterval(refreshAll, 1000);
-  }else{
-    clearInterval(timer);
-  }
-});
-
-// initial
-refreshAll(true);
+refresh();
 </script>
 </body>
 </html>
