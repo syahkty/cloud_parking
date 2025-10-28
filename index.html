@@ -19,79 +19,36 @@
         color: var(--txt);
         font-family: system-ui, Segoe UI, Arial, sans-serif;
       }
-      .wrap {
-        max-width: 760px;
-        margin: 40px auto;
-        padding: 20px;
-      }
+      .wrap { max-width: 760px; margin: 40px auto; padding: 20px; }
       .card {
         background: var(--card);
         border: 1px solid var(--mut);
         border-radius: 16px;
         padding: 18px;
       }
-      .row {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
       input {
-        background: #0f1730;
-        border: 1px solid var(--mut);
-        color: var(--txt);
-        border-radius: 10px;
-        padding: 10px;
-        min-width: 240px;
+        background: #0f1730; border: 1px solid var(--mut); color: var(--txt);
+        border-radius: 10px; padding: 10px; min-width: 240px;
       }
-      .btn {
-        border: 0;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .btn-green {
-        background: var(--ok);
-        color: #fff;
-      }
+      .btn { border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+      .btn-green { background: var(--ok); color: #fff; }
       .pill {
-        display: inline-block;
-        padding: 6px 10px;
-        border: 1px solid var(--mut);
-        border-radius: 999px;
-        background: #0f1730;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 10px; border: 1px solid var(--mut);
+        border-radius: 999px; background: #0f1730;
       }
-      .led {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 6px;
-        vertical-align: middle;
-      }
-      .r {
-        background: #ff4d4f;
-      }
-      .y {
-        background: #ffd23f;
-      }
-      .g {
-        background: #41d37e;
-      }
-      .n {
-        background: #4a5568;
-      }
+      .led { width: 12px; height: 12px; border-radius: 50%; }
+      .r { background: #ff4d4f; }
+      .y { background: #ffd23f; }
+      .g { background: #41d37e; }
+      .n { background: #4a5568; }
       pre {
-        background: #0f1730;
-        border: 1px solid var(--mut);
-        padding: 10px;
-        border-radius: 10px;
-        white-space: pre-wrap;
+        background: #0f1730; border: 1px solid var(--mut);
+        padding: 10px; border-radius: 10px; white-space: pre-wrap;
       }
-      small {
-        opacity: 0.75;
-      }
+      small { opacity: 0.75; }
+      .statusGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     </style>
   </head>
   <body>
@@ -99,44 +56,39 @@
       <h2>Palang Cloud Control</h2>
       <div class="card">
         <div class="row">
-          <input
-            id="http"
-            placeholder="HTTP API base"
-            value="https://d2shze8jl6.execute-api.ap-southeast-1.amazonaws.com"
-          />
-          <input
-            id="ws"
-            placeholder="WS base (wss)"
-            value="wss://4n2u4agei2.execute-api.ap-southeast-1.amazonaws.com/prod"
-          />
+          <input id="http" placeholder="HTTP API base" value="https://d2shze8jl6.execute-api.ap-southeast-1.amazonaws.com" />
+          <input id="ws" placeholder="WS base (wss)" value="wss://4n2u4agei2.execute-api.ap-southeast-1.amazonaws.com/prod" />
           <input id="dev" placeholder="Device ID" value="PALANG-01" />
           <input id="key" placeholder="API key (wajib jika diaktifkan)" />
         </div>
+
         <div class="row" style="margin-top: 10px">
           <button id="btnConn" class="btn">Connect WS</button>
-          <button id="btnOpen" class="btn btn-green" disabled>
-            OPEN (Buka Palang)
-          </button>
+          <button id="btnOpen" class="btn btn-green" disabled>OPEN (Buka Palang)</button>
           <button id="btnReset" class="btn">Force Reset (open:false)</button>
         </div>
 
-        <div class="row" style="margin-top: 12px">
-          <div class="pill">
-            <span id="wsdot" class="led n"></span
-            ><b id="wsText">WS: Disconnected</b>
-          </div>
+        <div class="row" style="margin-top: 12px; gap:12px;">
+          <div class="pill"><span id="wsdot" class="led n"></span><b id="wsText">WS: Disconnected</b></div>
           <div class="pill"><b>Arm:</b> <span id="armTxt">false</span></div>
           <div class="pill"><b>ArmUntil:</b> <span id="armUntil">—</span></div>
+        </div>
+
+        <!-- NEW: status lampu -->
+        <div class="row" style="margin-top: 12px;">
+          <div class="pill">
+            <span id="lampDot" class="led n"></span>
+            <b>Lampu:</b> <span id="lampText">NONE</span>
+          </div>
+          <div class="pill">
+            <b>Terakhir:</b> <span id="lampUpdated">—</span>
+          </div>
         </div>
 
         <div style="margin-top: 12px">
           <b>Log</b>
           <pre id="log"></pre>
-          <small
-            >Browser akan enable tombol OPEN hanya saat menerima push
-            <i>arm</i> dari server (ketika ESP32 mengirim telemetry
-            terdeteksi/merah).</small
-          >
+          <small>Browser akan enable tombol OPEN hanya saat menerima push <i>arm</i> dari server (ketika ESP32 mengirim telemetry terdeteksi/merah).</small>
         </div>
       </div>
     </div>
@@ -154,12 +106,9 @@
 
       function log(s) {
         $("log").textContent =
-          new Date().toLocaleTimeString() +
-          " - " +
-          s +
-          "\n" +
-          $("log").textContent;
+          new Date().toLocaleTimeString() + " - " + s + "\n" + $("log").textContent;
       }
+
       function setWS(state) {
         if (state === "up") {
           $("wsdot").className = "led g";
@@ -172,57 +121,94 @@
           $("wsText").textContent = "WS: ...";
         }
       }
+
       function setArm(on, untilMs) {
         armed = !!on;
         $("armTxt").textContent = String(armed);
         $("btnOpen").disabled = !armed;
-        if (untilMs) {
-          $("armUntil").textContent = new Date(untilMs).toLocaleTimeString();
-        } else {
-          $("armUntil").textContent = "—";
-        }
-        if (armTimer) {
-          clearTimeout(armTimer);
-          armTimer = null;
-        }
+        $("armUntil").textContent = untilMs ? new Date(untilMs).toLocaleTimeString() : "—";
+        if (armTimer) { clearTimeout(armTimer); armTimer = null; }
         if (armed && untilMs) {
           const left = Math.max(0, untilMs - Date.now());
           armTimer = setTimeout(() => setArm(false, null), left + 100);
         }
       }
 
+      // NEW: peta warna + setter status lampu
+      function normalizeLed(v) {
+        if (!v) return "NONE";
+        const s = String(v).trim().toUpperCase();
+        if (["RED","YELLOW","GREEN","NONE"].includes(s)) return s;
+        // fallback beberapa alias umum
+        if (s.startsWith("R")) return "RED";
+        if (s.startsWith("Y")) return "YELLOW";
+        if (s.startsWith("G")) return "GREEN";
+        return "NONE";
+      }
+
+      function setLamp(ledVal) {
+        const val = normalizeLed(ledVal);
+        const dot = $("lampDot");
+        const txt = $("lampText");
+        const upd = $("lampUpdated");
+
+        // reset kelas
+        dot.className = "led n";
+        if (val === "RED") dot.classList.replace("n", "r");
+        else if (val === "YELLOW") dot.classList.replace("n", "y");
+        else if (val === "GREEN") dot.classList.replace("n", "g");
+        else dot.classList.replace("n", "n");
+
+        txt.textContent = val;
+        upd.textContent = new Date().toLocaleTimeString();
+      }
+
       function connectWS() {
         if (sock && sock.readyState === WebSocket.OPEN) return;
-        const url = `${wsBase()}?deviceId=${encodeURIComponent(dev())}${
-          key() ? `&key=${encodeURIComponent(key())}` : ""
-        }`;
+        const qp = new URLSearchParams({ deviceId: dev() });
+        if (key()) qp.set("key", key());
+        const url = `${wsBase()}?${qp.toString()}`;
+
         log("Connecting WS: " + url);
         setWS("...");
         sock = new WebSocket(url);
-        sock.onopen = () => {
-          setWS("up");
-          log("WS open");
-        };
-        sock.onclose = () => {
-          setWS("down");
-          log("WS closed");
-          setArm(false, null);
-        };
-        sock.onerror = (e) => {
-          setWS("down");
-          log("WS error");
-        };
+
+        sock.onopen = () => { setWS("up"); log("WS open"); };
+        sock.onclose = () => { setWS("down"); log("WS closed"); setArm(false, null); };
+        sock.onerror = () => { setWS("down"); log("WS error"); };
+
         sock.onmessage = (evt) => {
+          // ---- WS message handler ----
           try {
             const msg = JSON.parse(evt.data || "{}");
+
+            // 1) Push "arm" (server: {type:"arm", arm:true, until: number})
             if (msg.type === "arm") {
-              setArm(!!msg.arm, msg.armUntil || null);
-              log("ARM push received: " + JSON.stringify(msg));
-            } else if (msg.type === "cmd") {
-              log("CMD push: " + JSON.stringify(msg));
-            } else {
-              log("WS msg: " + evt.data);
+              const until = msg.until ?? msg.armUntil ?? null; // dukung kedua nama
+              setArm(!!msg.arm, until);
+              log("ARM push: " + JSON.stringify(msg));
+              // Jika server juga menyertakan led di pesan arm, ikut update
+              if (msg.led) setLamp(msg.led); // NEW
+              return;
             }
+
+            // 2) Push "cmd" (server broadcast saat set-command)
+            if (msg.type === "cmd") {
+              log("CMD push: " + JSON.stringify(msg));
+              if (msg.led) setLamp(msg.led); // NEW: kalau ada led ikut update
+              return;
+            }
+
+            // 3) Push "state" (disarankan saat telemetry masuk)
+            //    contoh server kirim: { type:"state", led:"RED", detected:true, gateOpen:false, updatedAt:... }
+            if (msg.type === "state" || typeof msg.led !== "undefined") { // NEW: fleksibel
+              setLamp(msg.led);
+              log("STATE push: " + JSON.stringify(msg));
+              return;
+            }
+
+            // default
+            log("WS msg: " + evt.data);
           } catch (e) {
             log("WS parse error: " + String(e));
           }
@@ -248,19 +234,10 @@
         $("btnOpen").disabled = true;
         try {
           await postJSON("/set-command", { deviceId: dev(), open: true });
-          Swal.fire({
-            icon: "success",
-            title: "OPEN dikirim",
-            text: "Perintah OPEN tersimpan. ESP akan eksekusi.",
-          });
+          Swal.fire({ icon: "success", title: "OPEN dikirim", text: "Perintah OPEN tersimpan. ESP akan eksekusi." });
         } catch (e) {
-          Swal.fire({
-            icon: "error",
-            title: "Gagal kirim OPEN",
-            text: e.message,
-          });
+          Swal.fire({ icon: "error", title: "Gagal kirim OPEN", text: e.message });
         } finally {
-          // tetap ikut status arm (jangan force enable)
           $("btnOpen").disabled = !armed;
         }
       };
@@ -268,22 +245,16 @@
       $("btnReset").onclick = async () => {
         try {
           await postJSON("/set-command", { deviceId: dev(), open: false });
-          Swal.fire({
-            icon: "success",
-            title: "RESET dikirim",
-            text: "Perintah open:false tersimpan.",
-          });
+          Swal.fire({ icon: "success", title: "RESET dikirim", text: "Perintah open:false tersimpan." });
         } catch (e) {
-          Swal.fire({
-            icon: "error",
-            title: "Gagal kirim RESET",
-            text: e.message,
-          });
+          Swal.fire({ icon: "error", title: "Gagal kirim RESET", text: e.message });
         }
       };
 
-      // optional: langsung connect saat halaman dibuka
+      // optional: connect saat halaman dibuka
       connectWS();
+      // NEW: set default tampilan lampu
+      setLamp("NONE");
     </script>
   </body>
 </html>
